@@ -61,19 +61,19 @@ def decode_message_pair(message):
         return "M3+M4, Eapol source M4, Replay counter not maching."
         
 def decode_MAC(keymic):
-    return format(ord(keymic[0]), '02X') + ":" + format(ord(keymic[1]), '02X') + ":" + format(ord(keymic[2]), '02X') + ":" +format(ord(keymic[3]), '02X') + ":" + format(ord(keymic[4]), '02X') + ":" + format(ord(keymic[5]), '02X')
+    return format(keymic[0], '02X') + ":" + format(keymic[1], '02X') + ":" + format(keymic[2], '02X') + ":" +format(keymic[3], '02X') + ":" + format(keymic[4], '02X') + ":" + format(keymic[5], '02X')
 
 def string_to_hex(string):
     tmp = ''
     for x in range(0,  len(string) - 1):
-        tmp +=  format(ord(string[x]), '02X')
+        tmp +=  format(string[x],  '02X')
     return tmp
 
 def format_EAPOL(eapol,  eapol_len):
     tmp = ''
     for x in range(0,  eapol_len - 1):
         if x > 0 and not x % 16: tmp += "\n                "
-        tmp += format(ord(eapol[x]), "02X") + " "
+        tmp += format(eapol[x], "02X") + " "
     return tmp
     
 #def get_oui(mac):
@@ -87,36 +87,35 @@ parser.add_argument('hccapx')
 
 args = parser.parse_args()
 
-
-with open(sys.argv[1], 'r') as f:
+with open(sys.argv[1], 'rb') as f:
     infile = f.read
-    packet_total = os.fstat(f.fileno()).st_size / 393
+    packet_total = int(os.fstat(f.fileno()).st_size / 393)
     if not os.fstat(f.fileno()).st_size % 393:
         packet_count = 0
         for cap in read_in_chunks(f):
             packet_count += 1
             signature,  version, message_pair, essid_len, essid, keyver, keymic, mac_ap, nonce_ap, \
             mac_sta, nonce_sta,  eapol_len, eapol = unpack('4s I B B 32s B 16s 6s 32s 6s 32s 2s 256s', cap)
-            print "--------------------------"
-            print "Packet " + str(packet_count) + " / " + str(packet_total)
-            print "--------------------------"
-            print "     Signature: " + signature
-            print "       Version: " + str(int(version))
-            print "  Message Pair: " + decode_message_pair(int(message_pair))
-            print "  ESSID length: " + str(essid_len)
-            print "         ESSID: " + essid[0:int(essid_len)]
-            print "   Key Version: " + str(int(keyver))
-            print "       Key Mic: " + string_to_hex(keymic)
-            print "        AP MAC: " + decode_MAC(mac_ap)
-            print "      AP Nonce: " + string_to_hex(nonce_ap)
-            print "   Station MAC: " + decode_MAC(mac_sta)
-            print " Station Nonce: " + string_to_hex(nonce_sta)
-            _eapol_len = (ord(eapol_len[1]) * 256) + (ord(eapol_len[0]))
-            print "  EAPOL Length: " + str(_eapol_len)
-            print "         EAPOL: " + format_EAPOL(eapol, _eapol_len)
-            print "\n"
+            print ("--------------------------")
+            print ("Packet " + str(packet_count) + " / " + str(packet_total))
+            print ("--------------------------")
+            print ("     Signature: " + signature.decode("utf-8"))
+            print ("       Version: " + str(int(version)))
+            print ("  Message Pair: " + decode_message_pair(int(message_pair)))
+            print ("  ESSID length: " + str(essid_len))
+            print ("         ESSID: " + essid[0:int(essid_len)].decode("utf-8"))
+            print ("   Key Version: " + str(int(keyver)))
+            print ("       Key Mic: " + string_to_hex(keymic))
+            print ("        AP MAC: " + decode_MAC(mac_ap))
+            print ("      AP Nonce: " + string_to_hex(nonce_ap))
+            print ("   Station MAC: " + decode_MAC(mac_sta))
+            print (" Station Nonce: " + string_to_hex(nonce_sta))
+            _eapol_len = (eapol_len[1] * 256) + (eapol_len[0])
+            print ("  EAPOL Length: " + str(_eapol_len))
+            print ("         EAPOL: " + format_EAPOL(eapol, _eapol_len))
+            print ("\n")
             
     else:
-        print "Invalid HCCAPX file - size not a multiple of 393 bytes."
+        print ("Invalid HCCAPX file - size not a multiple of 393 bytes.")
     
     
